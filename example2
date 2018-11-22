@@ -1,0 +1,25 @@
+SELECT  TO_CHAR(date_action, 'yyyy-mm-dd') AS Date
+	,UPPER(dim_creative.creative_name) AS "Adname"
+	,UPPER(SUM(number_impression)) AS "Number Impression"
+	,UPPER(SUM(number_click)) AS "Number Click"
+	,UPPER(ROUND(SUM(client_cost),2)) AS "Client Cost Usd"
+	,fci.custom_action_currency AS "Currency"
+FROM fact_campaign_insights fci
+LEFT OUTER JOIN dim_bundle_identifier
+	ON dim_bundle_identifier.bundle_id = fci.bundle_id
+LEFT OUTER JOIN dim_campaign
+	ON dim_campaign.campaign_id = fci.campaign_id
+LEFT OUTER JOIN (
+		SELECT creative_id, creative_name
+		FROM dim_creative
+		GROUP BY creative_id, creative_name
+	) AS dim_creative
+	ON dim_creative.creative_id = fci.creative_id
+LEFT OUTER JOIN dim_app
+	ON dim_app.app_id = fci.publisher_id
+WHERE company_id = 319
+	AND date_action >= DATE_TRUNC('month', DATEADD('month', 0, CURRENT_DATE))
+	AND fci.campaign_id in (23895, 23896)
+	AND fci.country_code_a2 = 'US'
+GROUP BY "Date","Adname","Currency"
+ORDER BY "Date","Adname","Currency"
